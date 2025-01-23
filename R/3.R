@@ -7,12 +7,12 @@ id <- id[drug_grp == "Opiate", ]
 
 id <- id[, .(client_random_id, utla23cd)] |> unique()
 
-df <- 
+df <-
   data.table::fread("data/raw/SIR_table_for_VfM_linked.csv")
 
 df[, year := lubridate::year(submoddt)]
 
-df <- df[ ,.(client_random_id, year, phbudi_any)]
+df <- df[, .(client_random_id, year, phbudi_any)]
 
 df <- data.table::merge.data.table(df, id, by = "client_random_id")
 
@@ -22,10 +22,10 @@ df[, any_lab := fifelse(phbudi_any > 0, "LAB", "Other")]
 
 df <- df[, .(count = .N), by = .(year, utla23cd, any_lab)]
 
-df <- df[year > 2019,]
+df <- df[year > 2019, ]
 
-trch <- 
-  data.table::fread("data/published_allocations_tranches.csv", select = c('Area code', 'Local authority', 'Tranche'))
+trch <-
+  data.table::fread("data/published_allocations_tranches.csv", select = c("Area code", "Local authority", "Tranche"))
 
 
 data.table::setnames(trch, janitor::make_clean_names(names(trch)))
@@ -33,34 +33,36 @@ data.table::setnames(trch, janitor::make_clean_names(names(trch)))
 dt <-
   data.table::merge.data.table(df, trch, by.x = "utla23cd", by.y = "area_code")
 
-dt |> 
+dt |>
   fwrite("data/lab-data-by-tranche-and-area.csv")
 
 
-dt |> 
-  group_by(year, tranche, any_lab) |> 
-  summarise(count = sum(count)) |> 
-  ungroup() |> 
-  as.data.table() |> 
-  dcast(year + tranche ~ any_lab) |> 
+dt |>
+  group_by(year, tranche, any_lab) |>
+  summarise(count = sum(count)) |>
+  ungroup() |>
+  as.data.table() |>
+  dcast(year + tranche ~ any_lab) |>
   fwrite("data/lab-data-by-tranche.csv")
 
 dt <- data.table::dcast(dt, year + tranche + utla23cd ~ any_lab, value.var = "count", fun.aggregate = mean)
 
-dt[, rate := LAB / Other]
+dt[, rate := LAB / (LAB + Other)]
 
-setnafill(dt, fill =  0, cols = c("LAB", "rate"))
+setnafill(dt, fill = 0, cols = c("LAB", "rate"))
 
 
-p5 <- 
-dt[, .(year, tranche = paste("Tranche", tranche), rate)] |> 
+p5 <-
+  dt[, .(year, tranche = paste("Tranche", tranche), rate)] |>
   ggplot(aes(x = year, y = rate, group = year)) +
   geom_boxplot() +
   scale_y_continuous(labels = scales::percent) +
-  facet_wrap(~ tranche, ) + labs(x = NULL, y = NULL) + 
-  theme(    strip.background = element_rect(fill = "black"),
-            strip.text = element_text(colour = "white", hjust = 0),
-            plot.caption = element_text(hjust = 0)
+  facet_wrap(~tranche, ) +
+  labs(x = NULL, y = NULL) +
+  theme(
+    strip.background = element_rect(fill = "black"),
+    strip.text = element_text(colour = "white", hjust = 0),
+    plot.caption = element_text(hjust = 0)
   )
 
 
@@ -71,15 +73,17 @@ dev.off()
 
 
 
-p6 <- 
-  dt[, .(year, tranche = paste("Tranche", tranche), rate)] |> 
+p6 <-
+  dt[, .(year, tranche = paste("Tranche", tranche), rate)] |>
   ggplot(aes(x = year, y = rate, group = year)) +
   geom_boxplot() +
   scale_y_log10(labels = scales::percent) +
-  facet_wrap(~ tranche, ) + labs(x = NULL, y = NULL) + 
-  theme(    strip.background = element_rect(fill = "black"),
-            strip.text = element_text(colour = "white", hjust = 0),
-            plot.caption = element_text(hjust = 0)
+  facet_wrap(~tranche, ) +
+  labs(x = NULL, y = NULL) +
+  theme(
+    strip.background = element_rect(fill = "black"),
+    strip.text = element_text(colour = "white", hjust = 0),
+    plot.caption = element_text(hjust = 0)
   )
 
 
@@ -116,20 +120,29 @@ summary_stats[, .(
   Year = year,
   Tranche = tranche,
   `Mean rate` = mean,
-  `Q1 Range` = sprintf("%.1f%% - %.1f%%", 
-                       ifelse(is.infinite(q1_min), 0, q1_min * 100), 
-                       ifelse(is.infinite(q1_max), 0, q1_max * 100)),
-  `Q2 Range` = sprintf("%.1f%% - %.1f%%", 
-                       ifelse(is.infinite(q2_min), 0, q2_min * 100), 
-                       ifelse(is.infinite(q2_max), 0, q2_max * 100)),
-  `Q3 Range` = sprintf("%.1f%% - %.1f%%", 
-                       ifelse(is.infinite(q3_min), 0, q3_min * 100), 
-                       ifelse(is.infinite(q3_max), 0, q3_max * 100)),
-  `Q4 Range` = sprintf("%.1f%% - %.1f%%", 
-                       ifelse(is.infinite(q4_min), 0, q4_min * 100), 
-                       ifelse(is.infinite(q4_max), 0, q4_max * 100)),
-  `Overall IQR` = sprintf("%.1f%% - %.1f%%", 
-                          ifelse(is.infinite(q1), 0, q1 * 100), 
-                          ifelse(is.infinite(q3), 0, q3 * 100))
+  `Q1 Range` = sprintf(
+    "%.1f%% - %.1f%%",
+    ifelse(is.infinite(q1_min), 0, q1_min * 100),
+    ifelse(is.infinite(q1_max), 0, q1_max * 100)
+  ),
+  `Q2 Range` = sprintf(
+    "%.1f%% - %.1f%%",
+    ifelse(is.infinite(q2_min), 0, q2_min * 100),
+    ifelse(is.infinite(q2_max), 0, q2_max * 100)
+  ),
+  `Q3 Range` = sprintf(
+    "%.1f%% - %.1f%%",
+    ifelse(is.infinite(q3_min), 0, q3_min * 100),
+    ifelse(is.infinite(q3_max), 0, q3_max * 100)
+  ),
+  `Q4 Range` = sprintf(
+    "%.1f%% - %.1f%%",
+    ifelse(is.infinite(q4_min), 0, q4_min * 100),
+    ifelse(is.infinite(q4_max), 0, q4_max * 100)
+  ),
+  `Overall IQR` = sprintf(
+    "%.1f%% - %.1f%%",
+    ifelse(is.infinite(q1), 0, q1 * 100),
+    ifelse(is.infinite(q3), 0, q3 * 100)
+  )
 )] |> write_csv("data/iqr_by_tranch.csv")
-

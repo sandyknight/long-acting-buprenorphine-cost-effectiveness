@@ -1,11 +1,8 @@
-
-
-
 f <- function(x) {
- (nrow(unique(x)))
+  (nrow(unique(x)))
 }
 
-#The total rows is the number of client-journeys
+# The total rows is the number of client-journeys
 client_journeys <- f(id[, .(client_random_id, n_jy)])
 
 clients <- f(id[, .(client_random_id)])

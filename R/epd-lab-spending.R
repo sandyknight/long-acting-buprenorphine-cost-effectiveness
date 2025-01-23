@@ -19,18 +19,18 @@ df2[, type := data.table::fcase(
   grepl(pattern = "oral", BNF_DESCRIPTION), "Oral buprenorphine",
   grepl(pattern = "sublingual", BNF_DESCRIPTION), "Sublingual buprenorphine",
   grepl(pattern = "prolonged", BNF_DESCRIPTION), "Prolonged-release injected buprenorphine",
-  default = BNF_DESCRIPTION 
+  default = BNF_DESCRIPTION
 )]
 
-df2 <- 
+df2 <-
   df2[, .(ACTUAL_COST = sum(ACTUAL_COST)), by = .(date, type)]
 
 
 
 
 afcharts::use_afcharts()
-df2 |> 
-  ggplot(aes(x = date, y = ACTUAL_COST, group = type)) + 
+df2 |>
+  ggplot(aes(x = date, y = ACTUAL_COST, group = type)) +
   geom_point(aes(colour = type)) +
   geom_smooth(aes(colour = type)) +
   scale_colour_discrete() +
@@ -38,16 +38,18 @@ df2 |>
 
 
 
-p7 <- 
-df2 |> 
-  ggplot(aes(x = date, y = ACTUAL_COST, group = type)) + 
+p7 <-
+  df2 |>
+  ggplot(aes(x = date, y = ACTUAL_COST, group = type)) +
   geom_area(aes(fill = type)) +
   scale_y_continuous(labels = scales::label_currency(prefix = "£")) +
-  labs(fill = NULL,
-        y = NULL,
-        x = NULL,
-        title = "Buprenorphine spending by route of administration",
-        subtitle = "England, January 2020 to September 2024", caption = "Source: English Prescribing Dataset (EPD)") +
+  labs(
+    fill = NULL,
+    y = NULL,
+    x = NULL,
+    title = "Buprenorphine spending by route of administration",
+    subtitle = "England, January 2020 to September 2024", caption = "Source: English Prescribing Dataset (EPD)"
+  ) +
   theme(plot.title.position = "plot", legend.direction = "vertical", legend.position = "top", legend.justification = "left")
 
 
